@@ -1,0 +1,2 @@
+const { rectIntersectsRect } = require('./RectCollisions');
+
