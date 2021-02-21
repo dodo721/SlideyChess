@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { pointIntersectsRect, rectIntersectsRect } from './server/RectCollisions';
+import { PIECE_HITBOXES } from './server/Rules';
 
 const chessPieceImages = {
     "Kb": "/images/king_black.png",
