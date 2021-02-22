@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+// TODO: Room URLs
+import { BrowserRouter as Router, witch, Route } from 'react-router-dom';
 import socketIOClient from 'socket.io-client';
 import Chessboard from './Chessboard';
 import MainMenu from './MainMenu';
@@ -42,8 +44,8 @@ const App = () => {
         }
     };
 
-    const onPieveMove = (type, pos) => {
-        socket.emit("PieceMove", type, pos);
+    const onPieceMove = (piece, pos) => {
+        socket.emit("PieceMove", piece, pos);
     };
 
     let numPlayers = 0;
@@ -64,11 +66,11 @@ const App = () => {
         <div className="game-panel">
             {roomData ? <div className="d-flex flex-column justify-content-center align-items-center">
                 <h5>You are player {playerColourToString(playerColour)}</h5>
-                <Chessboard chessData={roomData.chessData} playerColour={playerColour} onPieceMove={onPieveMove}/>
-            </div> : <MainMenu onSubmit={joinRoom} />}
+                <Chessboard chessData={roomData.chessData} playerColour={playerColour} onPieceMove={onPieceMove}/>
+            </div> : <MainMenu onSubmit={joinRoom} onError={setError} />}
         </div>
         <br/>
-        {error && <ErrorAlert color="danger" error={error} clearError={() => setError(null)}/>}
+        {error && <ErrorAlert color="danger" error={error} clearError={()=>setError(null)}/>}
     </div>);
 };
 

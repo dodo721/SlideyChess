@@ -21,14 +21,22 @@ const pointIntersectsRect = (pos, rect) => {
  * @param {Array} rect2 
  */
 const rectIntersectsRect = (rect1, rect2) => {
-    const [left1, top1, width1, height1] = rect1;
-    const [left2, top2, width2, height2] = rect2;
-    const r1 = {left: left1, top: top1, right: left1 + width1, bottom: top1 + height1};
-    const r2 = {left: left2, top: top2, right: left2 + width2, bottom: top2 + height2};
+    const r1 = getRectInTLBRFormat(rect1);
+    const r2 = getRectInTLBRFormat(rect2);
     return !(r2.left > r1.right || 
         r2.right < r1.left || 
         r2.top > r1.bottom ||
         r2.bottom < r1.top);
 };
 
-module.exports = { pointIntersectsRect, rectIntersectsRect };
+/**
+ * Convert a position,size rect to a top,left,bottom,right rect
+ * @param {Array} rect 
+ */
+const getRectInTLBRFormat = rect => {
+    const [left, top, width, height] = rect;
+    const r = {left, top, right: left + width, bottom: top + height};
+    return r;
+};
+
+module.exports = { pointIntersectsRect, rectIntersectsRect, getRectInTLBRFormat };

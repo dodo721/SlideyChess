@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { pointIntersectsRect, rectIntersectsRect } from './server/RectCollisions';
-import { PIECE_HITBOXES } from './server/Rules';
+import { getPieceType, getPieceColour } from './server/Pieces';
+import { getPieceCenter, sqSize, sqSizeHalf, sqSizeQuarter } from './server/Rules';
+import { getPiecesInRange, getTransformedHitbox, getPieceBoundingBox, getPieceHitboxes, pieceRaycast } from './server/Rules';
 
 const chessPieceImages = {
     "Kb": "/images/king_black.png",
@@ -26,11 +28,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
     const [dragPiece, setDragPiece] = useState(null);
     const [mousePos, setMousePos] = useState([0,0]);
     const [dragOffset, setDragOffset] = useState([0,0]);
-    const [sqSize, setSqSize] = useState([0,0]);
     const [ctx, setCtx] = useState(null);
-
-    const sqSizeHalf = sqSize.map(n=>n/2);
-    const sqSizeQuarter = sqSize.map(n=>n/4);
+    const [lastTakeablePieces, setLastTakeablePieces] = useState([]);
 
     const getPiecePos = pos => {
         if (playerColour === "w") return pos;
@@ -40,14 +39,6 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
             ctx.canvas.height - pos[1] - sqSize[1]
         ];
         return newPos;
-    };
-
-    const getPieceBoundingBox = pos => {
-        return [
-            pos[0] + sqSizeQuarter[0],
-            pos[1] + sqSizeQuarter[1],
-            ...sqSizeHalf
-        ];
     };
 
     const doImgDraw = (img, pos, size) => {
@@ -98,6 +89,13 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         ctx.globalAlpha = 1;
     };
 
+    const drawRect = (colour, rect, alpha=1) => {
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = colour;
+        ctx.fillRect(rect[0], rect[1], rect[2], rect[3]);
+        ctx.globalAlpha = 1;
+    };
+
     const drawChessGrid = () => {
         const [sqWidth, sqHeight] = sqSize;
         const white = '#F1D9B5';
@@ -111,11 +109,14 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
 
     const drawChessPiece = async (piece, pos) => {
         try {
-            const type = piece.substr(0, 1) + piece.substr(2);
+            const type = getPieceType(piece);
             await drawImage(chessPieceImages[type], pos, sqSize);
+            const boundingBox = getPieceBoundingBox(pos);
             if (dragging) {
-                const boundingBox = getPieceBoundingBox(pos);
-                drawSquare('#0000ff', [boundingBox[0], boundingBox[1]], [boundingBox[2], boundingBox[3]], 0.3);
+                drawRect('#0000ff', boundingBox, 0.3);
+            }
+            if (lastTakeablePieces.includes(piece)) {
+                drawRect('#ff0000', boundingBox, 0.3);
             }
         } catch (e) {
             console.error(e);
@@ -147,7 +148,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         const [x,y] = [e.pageX - ctx.canvas.offsetLeft, e.pageY - ctx.canvas.offsetTop];
         const pieces = Object.keys(chessData);
         for (let i = 0; i < pieces.length; i++) {
-            if (pieces[i].substr(2) !== playerColour) continue;
+            if (getPieceColour(pieces[i]) !== playerColour) continue;
             const pos = getPiecePos(chessData[pieces[i]]);
             if (pointIntersectsRect([x,y], [...pos, ...sqSize])) {
                 const drgOff = [pos[0] - x, pos[1] - y];
@@ -163,12 +164,9 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
     const onMouseUp = () => {
         if (dragPiece) {
             onPieceMove(dragPiece, getPiecePos(mousePos));
-            Object.keys(chessData).forEach(piece => {
-                if (piece === dragPiece) return;
-                if (rectIntersectsRect(getPieceBoundingBox(chessData[piece]), getPieceBoundingBox(getPiecePos(mousePos)))) {
-                    alert("INTERSECTS " + piece + "!!");
-                }
-            });
+            const inRange = getPiecesInRange(dragPiece, getPiecePos(mousePos), chessData);
+            const tp = pieceRaycast(dragPiece, mousePos, inRange, chessData, playerColour === "b").hitPieces;
+            setLastTakeablePieces(tp);
         }
         setDragPiece(null);
         setDragging(false);
@@ -178,7 +176,14 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         clear();
         drawChessGrid();
         if (chessData) {
-            Object.keys(chessData).forEach(piece => {
+            const pieces = Object.keys(chessData);
+            const myPieces = pieces.filter(piece => getPieceColour(piece)===playerColour);
+            const theirPieces = pieces.filter(piece => getPieceColour(piece)!==playerColour);
+            theirPieces.forEach(piece => {
+                if (!dragging || piece !== dragPiece)
+                    drawChessPiece(piece, getPiecePos(chessData[piece]));
+            });
+            myPieces.forEach(piece => {
                 if (!dragging || piece !== dragPiece)
                     drawChessPiece(piece, getPiecePos(chessData[piece]));
             });
@@ -191,12 +196,16 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
                 const canvas = canvasRef.current;
                 const context= canvas.getContext('2d');
                 setCtx(context);
-                const sqWidth = canvas.width / 8;
-                const sqHeight = canvas.height / 8;
-                setSqSize([sqWidth, sqHeight]);
             } else {
-                drawBoardFromChessData(); 
-                if (dragging) drawChessPiece(dragPiece, mousePos);
+                drawBoardFromChessData();
+                if (dragging) {
+                    drawChessPiece(dragPiece, mousePos);
+                    const inRange = getPiecesInRange(dragPiece, mousePos, chessData, true);
+                    const hitboxes = pieceRaycast(dragPiece, mousePos, inRange, chessData, playerColour === "b").hitboxes;
+                    hitboxes.forEach((hitbox) => {
+                        drawRect('#00ff00', hitbox, 0.3);
+                    });
+                }
             }
         }
         drawFunc();

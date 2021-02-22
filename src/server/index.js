@@ -9,6 +9,7 @@ const io = require('socket.io')(http, {
 });
 const e = require('express');
 const { Client, clients } = require('./Client');
+const { getPieceColour } = require('./Pieces');
 const { Room, rooms } = require('./Room');
 
 // Server status page
@@ -66,10 +67,10 @@ io.on('connection', (socket) => {
         if (myRoom) myRoom.disconnectClient(myId);
     });
 
-    socket.on("PieceMove", (type, pos)=> {
+    socket.on("PieceMove", (piece, pos)=> {
         const playerColour = getPlayerColour(me, myRoom);
-        const pieceColour = type.substr(2);
-        if (playerColour === pieceColour) myRoom.movePiece(type, pos);
+        const pieceColour = getPieceColour(piece)
+        if (playerColour === pieceColour) myRoom.movePiece(piece, pos);
         else socket.emit("Error", "You cannot move your opponent's pieces!");
     });
 
