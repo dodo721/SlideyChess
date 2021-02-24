@@ -8,9 +8,12 @@ const io = require('socket.io')(http, {
     }
 });
 const e = require('express');
+const { exit } = require('process');
 const { Client, clients } = require('./Client');
 const { getPieceColour } = require('./Pieces');
 const { Room, rooms } = require('./Room');
+
+const CONFIG = require('./serverconfig.json');
 
 // Server status page
 app.get('/', (req, res) => {
@@ -115,6 +118,16 @@ const getPlayerColour = (client, room) => {
     else return null;
 }
 
-http.listen(3010, () => {
-    console.log('listening on *:3010');
+http.listen(CONFIG.port, () => {
+    console.log('listening on *:' + CONFIG.port);
 });
+
+const exitHandler = () => {
+    console.log("Au revoir!");
+    http.close();
+    process.exit();
+};
+
+process.on('SIGINT', exitHandler);
+process.on('SIGTERM', exitHandler);
+process.on('SIGHUP', exitHandler);

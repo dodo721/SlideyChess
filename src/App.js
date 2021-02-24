@@ -5,8 +5,9 @@ import socketIOClient from 'socket.io-client';
 import Chessboard from './Chessboard';
 import MainMenu from './MainMenu';
 import ErrorAlert from './ErrorAlert';
+import { port } from './server/serverconfig.json';
 
-const ENDPOINT = "http://slideychess.com:3010";
+const ENDPOINT = "http://slideychess.com:" + port;
 
 const App = () => {
 
