@@ -1,4 +1,4 @@
-const { rectIntersectsRect, getRectInTLBRFormat } = require('./RectCollisions');
+const { rectIntersectsRect, getRectInTLBRFormat, rectToPolygon, rectIntersectsPolygon } = require('./Collisions');
 const { getPieceType, getPieceColour } = require('./Pieces');
 const { clamp, uniq, dist } = require('./MiscUtil');
 
@@ -101,15 +101,6 @@ const hitboxIsDiagonal = hitbox => {
     return hitbox[0] === "diagonal";
 }
 
-const rectToPolygon = rect => {
-    return [
-        [rect[0], rect[1]],
-        [rect[0] + rect[2], rect[1]],
-        [rect[0] + rect[2], rect[1] + rect[3]],
-        [rect[0], rect[1] + rect[3]]
-    ];
-};
-
 const diagonalHitboxToPolygon = hitbox => {
     if (!hitboxIsDiagonal(hitbox)) throw new Error("Expected a diagonal hitbox but did not receive one!");
     const [posX, posY, dirX, dirY] = hitbox.slice(1);
@@ -162,6 +153,7 @@ const pieceRaycast = (piece, pos, inRangePieces, chessData, invert) => {
         ///                      DIAGONAL LOGIC                         ///
         ///////////////////////////////////////////////////////////////////
         if (hitboxIsDiagonal(hitbox)) {
+            inRangePieces.forEach(p => hitPieces.push(p));
             return hitbox;
         }
 
@@ -240,7 +232,7 @@ const pieceRaycast = (piece, pos, inRangePieces, chessData, invert) => {
         }
         return limitedHitbox;
     });
-    return { hitboxes:limitedHitboxes, hitPieces };
+    return { hitboxes:limitedHitboxes, hitPieces:uniq(hitPieces) };
 };
 
 /**
@@ -274,11 +266,11 @@ const getPieceBoundingBox = pos => {
  * @param {Array} chessData The current data of the chessboard
  * @param {Boolean} includeMyPieces Include the pieces of the player's side
  */
-const getPiecesInRange = (piece, pos, chessData, includeMyPieces, invert) => {
+const getPiecesInRange = (piece, pos, chessData, includeMyPieces) => {
     const type = getPieceType(piece);
     const colour = getPieceColour(piece);
     // TODO Error handling
-    const hitboxes = getPieceHitboxes(type, pos, invert);
+    const hitboxes = getPieceHitboxes(type, pos);
     
     let takeablePieces = [];
     let otherPieces = Object.keys(chessData);
@@ -288,7 +280,11 @@ const getPiecesInRange = (piece, pos, chessData, includeMyPieces, invert) => {
         otherPieces.forEach(otherPiece => {
             if (otherPiece === piece) return;
             const otherPieceBoundingBox = getPieceBoundingBox(chessData[otherPiece]);
-            if (rectIntersectsRect(hitbox, otherPieceBoundingBox)) {
+            if (hitboxIsDiagonal(hitbox)) {
+                if (rectIntersectsPolygon(otherPieceBoundingBox, diagonalHitboxToPolygon(hitbox))) {
+                    takeablePieces.push(otherPiece);
+                }
+            } else if (rectIntersectsRect(hitbox, otherPieceBoundingBox)) {
                 takeablePieces.push(otherPiece);
             }
         });

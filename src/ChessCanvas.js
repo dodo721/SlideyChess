@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { pointIntersectsRect, rectIntersectsRect } from './server/RectCollisions';
+import { pointIntersectsRect, rectIntersectsRect } from './server/Collisions';
 import { getPieceType, getPieceColour } from './server/Pieces';
 import { getPieceCenter, sqSize, sqSizeHalf, sqSizeQuarter } from './server/Rules';
 import { getPiecesInRange, getTransformedHitbox, getPieceBoundingBox, getPieceHitboxes, pieceRaycast, hitboxIsDiagonal, diagonalHitboxToPolygon } from './server/Rules';
