@@ -15,6 +15,8 @@ const App = () => {
 
     const [socket, setSocket] = useState(null);
     const [roomData, setRoomData] = useState(null);
+    // Split out chess data so local moves can be cached until server update
+    const [chessData, setChessData] = useState(null);
     const [myId, setMyId] = useState(null);
     const [error, setError] = useState(null);
     const [darkMode, setDarkmode] = useState(false);
@@ -28,6 +30,7 @@ const App = () => {
         soc.on("RoomUpdate", data => {
             console.log("ROOM DATA UPDATE", data);
             setRoomData(data);
+            setChessData(data.chessData);
         });
         soc.on("Error", err => {
             setError(err);
@@ -62,6 +65,11 @@ const App = () => {
     }
 
     const onPieceMove = (piece, pos) => {
+        // Cache new position locally
+        let newChessData = Object.assign({}, chessData);
+        newChessData[piece] = pos;
+        setChessData(newChessData);
+        // Update server
         socket.emit("PieceMove", piece, pos);
     };
 
@@ -89,7 +97,7 @@ const App = () => {
             <div className="game-panel">
                 {roomData ? <div className="d-flex flex-column justify-content-center align-items-center">
                     <h5>You are player {playerColourToString(playerColour)}</h5>
-                    <Chessboard chessData={roomData.chessData} playerColour={playerColour} onPieceMove={onPieceMove} />
+                    <Chessboard chessData={chessData} playerColour={playerColour} onPieceMove={onPieceMove} />
                     <br/>
                     <div className="d-flex flex-row justify-content-end w-100">
                         <div className="btn btn-secondary" onClick={exitRoom}>Exit</div>

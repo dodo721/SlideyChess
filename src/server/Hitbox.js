@@ -2,7 +2,7 @@ const { rectIntersectsRect, getRectInTLBRFormat, rectToPolygon, rectIntersectsPo
 const { getPieceType, getPieceColour, getPieceCenter } = require('./Pieces');
 const { sqSize, sqSizeHalf, sqSizeQuarter, hitboxSize } = require('./Constants');
 const { clamp, uniq } = require('./MiscUtil');
-const { Polygon } = require('./Polygon');
+const { Polygon, Line } = require('./Polygon');
 
 class Hitbox {
     
@@ -14,9 +14,13 @@ class Hitbox {
     static fromData (data) {
         return new Hitbox([data[0], data[1]], [data[2], data[3]]);
     }
-
+    
     data () {
         return [...this.pos, ...this.dir];
+    }
+
+    line () {
+        return new Line(this.pos, [this.pos[0] + this.dir[0], this.pos[1] + this.dir[1]]);
     }
 
     polygon () {
@@ -65,8 +69,8 @@ class Hitbox {
      */
     pieceTransform (pos) {
         const newPos = [
-            pos[0] + this.pos[0],
-            pos[1] + this.pos[1]
+            pos[0] + (this.pos[0] * sqSize[0]),
+            pos[1] + (this.pos[1] * sqSize[1])
         ];
         const newDir = [
             this.dir[0] * sqSize[0],
@@ -166,30 +170,30 @@ const PIECE_HITBOXES = {
     "Bb": [
         ["diagonal", -1000, -1000, 2000, 2000],
         ["diagonal", -1000, 1000, 2000, -2000],
-    ],
+    ],*/
     "Nw": [
-        ["diagonal", -1, 2, 2, -4],
-        ["diagonal", 1, 2, -2, -4],
-        ["diagonal", -2, 1, 4, -2],
-        ["diagonal", 2, 1, -4, -2],
+        new Hitbox([-1, 2], [2, -4]),
+        new Hitbox([1, 2], [-2, -4]),
+        new Hitbox([-2, 1], [4, -2]),
+        new Hitbox([2, 1], [-4, -2]),
     ],
     "Nb": [
-        ["diagonal", -1, 2, 2, -4],
-        ["diagonal", 1, 2, -2, -4],
-        ["diagonal", -2, 1, 4, -2],
-        ["diagonal", 2, 1, -4, -2],
-    ]*/
+        new Hitbox([-1, 2], [2, -4]),
+        new Hitbox([1, 2], [-2, -4]),
+        new Hitbox([-2, 1], [4, -2]),
+        new Hitbox([2, 1], [-4, -2]),
+    ],
     "Rw": [
         // Horizontal
-        new Hitbox([-1000, 0], [1000, 0]),
+        new Hitbox([-1000, 0], [2000, 0]),
         // Vertical
-        new Hitbox([0, -1000], [0, 1000])
+        new Hitbox([0, -1000], [0, 2000])
     ],
     "Rb": [
         // Horizontal
-        new Hitbox([-1000, 0], [1000, 1]),
+        new Hitbox([-1000, 0], [2000, 0]),
         // Vertical
-        new Hitbox([0, -1000], [1, 1000])
+        new Hitbox([0, -1000], [0, 2000])
     ],
 };
 
@@ -218,106 +222,5 @@ const getPieceHitboxes = (type, pos) => {
     hitboxes = hitboxes.map(hitbox => hitbox.pieceTransform(pos).centeredOnSquare());
     return hitboxes;
 };
-
-/**
- * Get the cut off hitboxes and pieces hit
- * @param {Array} hitbox 
- * @param {Array} pos
- * @param {Array} inRangePieces
- * @param {Array} chessData
- */
-/*
-const limitHitboxes = (piece, pos, inRangePieces, chessData) => {
-    const hitboxes = getPieceHitboxes(getPieceType(piece), pos);
-    const hitPieces = [];
-    const center = getPieceCenter(pos);
-    const limitedHitboxes = hitboxes.map (hitbox => {
-        ///////////////////////////////////////////////////////////////////
-        ///                      DIAGONAL LOGIC                         ///
-        ///////////////////////////////////////////////////////////////////
-        if (hitbox.isDiagonal()) {
-            // TODO: logic for diagonal hitboxes
-            inRangePieces.forEach(p => hitPieces.push(p));
-            return hitbox;
-        }
-
-        ///////////////////////////////////////////////////////////////////
-        ///                       LINEAR LOGIC                          ///
-        ///////////////////////////////////////////////////////////////////
-
-        // Deep copy hitbox
-        let limitedHitbox = hitbox.data().slice();
-        // TODO: If square, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
-        // if (hitbox[2] === hitbox[3])
-
-        // Filter pieces not in this hitbox
-        const inThisHitbox = inRangePieces.filter(otherPiece=>rectIntersectsRect(getPieceBoundingBox(chessData[otherPiece]).data(), hitbox.data()));
-        const horizontal = hitbox[2] > hitbox[3];
-        if (horizontal) {
-            // HORIZONTAL - LIMIT BY X AND WIDTH
-            // Filter pieces into those above and below the center
-            const belowCenterXPieces = inThisHitbox.filter(otherPiece => getPieceCenter(chessData[otherPiece])[0] < center[0]);
-            const aboveCenterXPieces = inThisHitbox.filter(otherPiece => getPieceCenter(chessData[otherPiece])[0] > center[0]);
-            // Find the minimum and maximum X values for the hitbox
-            let maxBelow = 0;
-            let minAbove = 500;
-            let lastHitPiece = null;
-            belowCenterXPieces.forEach(otherPiece => {
-                const otherPieceCenter = getPieceCenter(chessData[otherPiece]);
-                if (otherPieceCenter[0] > maxBelow) {
-                    maxBelow = otherPieceCenter[0];
-                    lastHitPiece = otherPiece;
-                }
-            });
-            if (lastHitPiece) hitPieces.push(lastHitPiece);
-            lastHitPiece = null;
-            aboveCenterXPieces.forEach(otherPiece => {
-                const otherPieceCenter = getPieceCenter(chessData[otherPiece]);
-                if (otherPieceCenter[0] < minAbove) {
-                    minAbove = otherPieceCenter[0];
-                    lastHitPiece = otherPiece;
-                }
-            });
-            if (lastHitPiece) hitPieces.push(lastHitPiece);
-            // Set hitbox X pos and width to minimum and maximum calculated
-            limitedHitbox[0] = Math.max(maxBelow, hitbox[0]);
-            const posXDiff = limitedHitbox[0] - hitbox[0];
-            limitedHitbox[2] = Math.min(minAbove - hitbox[0], hitbox[2]) - posXDiff;
-        } else {
-            // VERTICAL - LIMIT BY Y AND HEIGHT
-            // Filter pieces into those above and below the center
-            const belowCenterYPieces = inThisHitbox.filter(otherPiece => getPieceCenter(chessData[otherPiece])[1] < center[1]);
-            const aboveCenterYPieces = inThisHitbox.filter(otherPiece => getPieceCenter(chessData[otherPiece])[1] > center[1]);
-            // Find the minimum and maximum X values for the hitbox
-            let maxBelow = 0;
-            let minAbove = 500;
-            let lastHitPiece = null;
-            belowCenterYPieces.forEach(otherPiece => {
-                const otherPieceCenter = getPieceCenter(chessData[otherPiece]);
-                if (otherPieceCenter[1] > maxBelow) {
-                    maxBelow = otherPieceCenter[1];
-                    lastHitPiece = otherPiece;
-                }
-            });
-            if (lastHitPiece) hitPieces.push(lastHitPiece);
-            lastHitPiece = null;
-            aboveCenterYPieces.forEach(otherPiece => {
-                const otherPieceCenter = getPieceCenter(chessData[otherPiece]);
-                if (otherPieceCenter[1] < minAbove) {
-                    minAbove = otherPieceCenter[1];
-                    lastHitPiece = otherPiece;
-                }
-            });
-            if (lastHitPiece) hitPieces.push(lastHitPiece);
-            // Set hitbox Y pos and height to minimum and maximum calculated
-            limitedHitbox[1] = Math.max(maxBelow, hitbox[1]);
-            const posYDiff = limitedHitbox[1] - hitbox[1];
-            limitedHitbox[3] = Math.min(minAbove - hitbox[1], hitbox[3]) - posYDiff;
-        }
-        return Hitbox.fromData(limitedHitbox);
-    });
-    return { hitboxes:limitedHitboxes, hitPieces:uniq(hitPieces) };
-};
-*/
 
 module.exports = { getPieceHitboxes, getPieceBoundingHitbox, getPieceCenter, Hitbox };

@@ -2,7 +2,7 @@ const { rectIntersectsRect, getRectInTLBRFormat, rectToPolygon, rectIntersectsPo
 const { getPieceType, getPieceColour } = require('./Pieces');
 const { clamp, uniq, dist } = require('./MiscUtil');
 const { sqSize, sqSizeHalf, sqSizeQuarter, hitboxSize } = require('./Constants');
-const { Hitbox, limitHitboxes, getPieceHitboxes, getPieceCenter, getPieceBoundingHitbox } = require('./Hitbox');
+const { Hitbox, getPieceHitboxes, getPieceCenter, getPieceBoundingHitbox } = require('./Hitbox');
 
 /**
  * Returns a list of pieces in danger from the given piece
@@ -31,6 +31,23 @@ const getPiecesInRange = (piece, pos, chessData, includeMyPieces) => {
     });
     return uniq(takeablePieces);
 }
+
+/**
+ * Get the cut off hitboxes and pieces hit
+ * @param {Array} hitbox 
+ * @param {Array} pos
+ * @param {Array} chessData
+ */
+const limitHitboxes = (piece, pos, chessData) => {
+    const hitboxes = getPieceHitboxes(getPieceType(piece), pos);
+    const hitPieces = [];
+    const center = getPieceCenter(pos);
+    const inRange = getPiecesInRange
+    const limitedHitboxes = hitboxes.map (hitbox => {
+        
+    });
+    return { hitboxes:limitedHitboxes, hitPieces:uniq(hitPieces) };
+};
 
 /*const getTakeablePieces = (piece, pos, chessData) => {
     const inRange = getPiecesInRange(piece, pos, chessData, true);

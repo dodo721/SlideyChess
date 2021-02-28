@@ -216,10 +216,7 @@ class Polygon {
         // We have already tested if the bounding boxes intesect, so return true if we haven't already failed
         const imRect = this.isRect();
         const theyRect = polygon.isRect();
-        if (imRect && theyRect) {
-            console.log("Detected polygon thru AABB Rect!");
-            return true;
-        }
+        if (imRect && theyRect) return true;
 
         // SIDE DETECTION
         // Use points of intersection to determine if any sides of the polygon intersect
