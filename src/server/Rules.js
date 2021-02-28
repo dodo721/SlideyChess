@@ -42,7 +42,7 @@ const limitHitboxes = (piece, pos, chessData) => {
     const hitboxes = getPieceHitboxes(getPieceType(piece), pos);
     const hitPieces = [];
     const center = getPieceCenter(pos);
-    const inRange = getPiecesInRange
+    const inRange = getPiecesInRange(piece, pos, chessData, true);
     const limitedHitboxes = hitboxes.map (hitbox => {
         
     });
