@@ -5,6 +5,8 @@ import socketIOClient from 'socket.io-client';
 import Chessboard from './Chessboard';
 import MainMenu from './MainMenu';
 import ErrorAlert from './ErrorAlert';
+import DarkModeToggle from './DarkModeToggle';
+import Cookies from 'js-cookie';
 import { port } from './server/serverconfig.json';
 
 const ENDPOINT = "http://slideychess.com:" + port;
@@ -15,6 +17,7 @@ const App = () => {
     const [roomData, setRoomData] = useState(null);
     const [myId, setMyId] = useState(null);
     const [error, setError] = useState(null);
+    const [darkMode, setDarkmode] = useState(false);
 
     useEffect(() => {
         const soc = socketIOClient(ENDPOINT);
@@ -29,8 +32,9 @@ const App = () => {
         soc.on("Error", err => {
             setError(err);
         });
-
         setSocket(soc);
+        setDarkmode(Cookies.get('slidey-chess-dark-mode') === "true");
+
         return () => soc.disconnect();
     }, []);
 
@@ -45,6 +49,18 @@ const App = () => {
         }
     };
 
+    const exitRoom = () => {
+        if (!window.confirm("Are you sure you want to exit this game?")) return;
+        if (socket) {
+            setError(null);
+            console.log("Exiting " + roomData.code + "...");
+            socket.emit("RoomDisconnect");
+        } else {
+            console.warn("Socket not set!");
+            setError("Could not connect - try refreshing");
+        }
+    }
+
     const onPieceMove = (piece, pos) => {
         socket.emit("PieceMove", piece, pos);
     };
@@ -57,28 +73,42 @@ const App = () => {
             numPlayers = 1;
     }
 
+    const toggleDarkMode = on => {
+        setDarkmode(on);
+        Cookies.set('slidey-chess-dark-mode', on, { expires: 365 });
+    }
+
     const playerColour = roomData && (roomData.playerWhite === myId ? "w" : (roomData.playerBlack === myId ? "b" : "Error"));
 
-    return (<div className="d-flex flex-column justify-content-center align-items-center" style={{ width: "100vw", height: "100vh" }}>
-        <h1>Slidey Chess</h1>
-        {roomData && "In room " + roomData.code + ", " + numPlayers + "/2 players"}
-        <br />
-        <br />
-        <div className="game-panel">
-            {roomData ? <div className="d-flex flex-column justify-content-center align-items-center">
-                <h5>You are player {playerColourToString(playerColour)}</h5>
-                <Chessboard chessData={roomData.chessData} playerColour={playerColour} onPieceMove={onPieceMove}/>
-            </div> : <MainMenu onSubmit={joinRoom} onError={setError} />}
+    return (<div className={darkMode ? "dark-mode" : "light-mode"}>
+        <div className="d-flex flex-column justify-content-center align-items-center main" style={{ width: "100vw", height: "100vh" }}>
+            <h1>Slidey Chess</h1>
+            {roomData && "In room " + roomData.code + ", " + numPlayers + "/2 players"}
+            <br />
+            <br />
+            <div className="game-panel">
+                {roomData ? <div className="d-flex flex-column justify-content-center align-items-center">
+                    <h5>You are player {playerColourToString(playerColour)}</h5>
+                    <Chessboard chessData={roomData.chessData} playerColour={playerColour} onPieceMove={onPieceMove} />
+                    <br/>
+                    <div className="d-flex flex-row justify-content-end w-100">
+                        <div className="btn btn-secondary" onClick={exitRoom}>Exit</div>
+                    </div>
+                </div> : <MainMenu onSubmit={joinRoom} onError={setError} />}
+            </div>
+            <br />
+            {error && <ErrorAlert color="danger" error={error} clearError={() => setError(null)} />}
         </div>
-        <br/>
-        {error && <ErrorAlert color="danger" error={error} clearError={()=>setError(null)}/>}
+        <div className="position-absolute" style={{ top: 20, left: 20 }}>
+            <DarkModeToggle on={darkMode} onChange={toggleDarkMode} style={{ width: 50, height: 50 }} />
+        </div>
     </div>);
 };
 
 const playerColourToString = colourCode => {
     const playerColourStrings = {
-        "w":"White",
-        "b":"Black"
+        "w": "White",
+        "b": "Black"
     };
     if (playerColourStrings[colourCode]) return playerColourStrings[colourCode];
     else return colourCode;

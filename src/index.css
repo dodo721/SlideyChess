@@ -11,3 +11,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.dark-mode {
+    color: rgba(255, 255, 255, 0.6);
+    transition: 0.2s;
+}
+
+.dark-mode .main {
+    background-color: #121212;
+    transition: 0.2s;
+}
+
+.light-mode {
+    color: #212529;
+    transition: 0.2s;
+}
+
+.light-mode .main {
+    background-color: white;
+    transition: 0.2s;
+}

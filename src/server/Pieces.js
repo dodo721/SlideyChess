@@ -1,3 +1,5 @@
+const { sqSizeHalf } = require('./Constants');
+
 const chessPieceImages = {
     "Kb": "/images/king_black.png",
     "Kw": "/images/king_white.png",
@@ -77,4 +79,15 @@ const getPieceColour = (piece) => {
     return piece.substr(2);
 }
 
-module.exports = { chessPieceImages, getDefaultPieces, getPieceType, getPieceColour };
+/**
+ * Get the center point of a piece
+ * @param {Array} pos 
+ */
+const getPieceCenter = pos => {
+    return [
+        pos[0] + sqSizeHalf[0],
+        pos[1] + sqSizeHalf[1]
+    ];
+};
+
+module.exports = { chessPieceImages, getDefaultPieces, getPieceType, getPieceColour, getPieceCenter };

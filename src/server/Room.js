@@ -22,6 +22,8 @@ class Room {
     disconnectClient (clientId) {
         if (this.playerWhite === clientId) this.playerWhite = null;
         else if (this.playerBlack === clientId) this.playerBlack = null;
+        const socket = clients[clientId].socket;
+        if (socket) socket.emit("RoomUpdate", null);
         if (!this.playerWhite && !this.playerBlack) delete rooms[this.code];
         else this.updateRoom();
     }

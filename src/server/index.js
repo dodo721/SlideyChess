@@ -66,8 +66,16 @@ io.on('connection', (socket) => {
 
     socket.on("disconnect", () => {
         console.log("Client " + myId + " has disconnected" + (myRoom ? " from room " + myRoom.code : ""));
-        me.disconnect();
         if (myRoom) myRoom.disconnectClient(myId);
+        me.disconnect();
+    });
+
+    socket.on("RoomDisconnect", () => {
+        if (myRoom) {
+            console.log(myId + " left room " + myRoom.code);
+            myRoom.disconnectClient(myId);
+            myRoom = null;
+        }
     });
 
     socket.on("PieceMove", (piece, pos)=> {
