@@ -1,20 +1,5 @@
 const { sqSizeHalf } = require('./Constants');
 
-const chessPieceImages = {
-    "Kb": "/images/king_black.png",
-    "Kw": "/images/king_white.png",
-    "Qb": "/images/queen_black.png",
-    "Qw": "/images/queen_white.png",
-    "Bb": "/images/bishop_black.png",
-    "Bw": "/images/bishop_white.png",
-    "Nb": "/images/knight_black.png",
-    "Nw": "/images/knight_white.png",
-    "Rb": "/images/rook_black.png",
-    "Rw": "/images/rook_white.png",
-    "Pb": "/images/pawn_black.png",
-    "Pw": "/images/pawn_white.png"
-};
-
 const defaultPieces = {
     // White key pieces
     "R1w":[0,500-62.5],
@@ -55,19 +40,15 @@ const defaultPieces = {
     "P8b":[437.5,62.5],
 };
 
-/**
- * Get the starting position of the chessboard
- */
-const getDefaultPieces = () => {
-    // Deep copy to prevent mutation
-    return { ...defaultPieces };
+class Piece {
+
 }
 
 /**
  * Get the type of the piece
  * @param {String} piece 
  */
-const getPieceType = (piece) => {
+Piece.getPieceType = (piece) => {
     return piece.substr(0,1) + piece.substr(2);
 };
 
@@ -75,7 +56,7 @@ const getPieceType = (piece) => {
  * Get the colour of a piece
  * @param {String} piece 
  */
-const getPieceColour = (piece) => {
+Piece.getPieceColour = (piece) => {
     return piece.substr(2);
 }
 
@@ -83,11 +64,16 @@ const getPieceColour = (piece) => {
  * Get the center point of a piece
  * @param {Array} pos 
  */
-const getPieceCenter = pos => {
+Piece.getPieceCenter = (pos) => {
     return [
         pos[0] + sqSizeHalf[0],
         pos[1] + sqSizeHalf[1]
     ];
 };
 
-module.exports = { chessPieceImages, getDefaultPieces, getPieceType, getPieceColour, getPieceCenter };
+Piece.getDefaultPieces = () => {
+   // Deep copy to prevent mutation
+   return { ...defaultPieces };
+}
+
+module.exports = Piece;

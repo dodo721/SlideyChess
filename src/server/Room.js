@@ -1,6 +1,6 @@
 const { json } = require('express');
 const { clients } = require('./Client');
-const { getDefaultPieces } = require('./Pieces');
+const Piece = require('./Pieces');
 
 const rooms = {};
 
@@ -15,7 +15,7 @@ class Room {
         this.playerWhite = creatorId;
         this.playerBlack = null;
         this.turn = "white";
-        this.chessData = getDefaultPieces();
+        this.chessData = Piece.getDefaultPieces();
         this.updateRoom();
     }
 

@@ -10,7 +10,7 @@ const io = require('socket.io')(http, {
 const e = require('express');
 const { exit } = require('process');
 const { Client, clients } = require('./Client');
-const { getPieceColour } = require('./Pieces');
+const Piece = require('./Pieces');
 const { Room, rooms } = require('./Room');
 
 const CONFIG = require('./serverconfig.json');
@@ -80,7 +80,7 @@ io.on('connection', (socket) => {
 
     socket.on("PieceMove", (piece, pos)=> {
         const playerColour = getPlayerColour(me, myRoom);
-        const pieceColour = getPieceColour(piece)
+        const pieceColour = Piece.getPieceColour(piece)
         if (playerColour === pieceColour) myRoom.movePiece(piece, pos);
         else socket.emit("Error", "You cannot move your opponent's pieces!");
     });
@@ -98,7 +98,7 @@ io.on('connection', (socket) => {
         try {
             myRoom = new Room(roomCode, myId);
             console.log(myId + " new room " + roomCode);
-        } catch {
+        } catch (e) {
             // Room exists, try and join it instead
             const desiredRoom = rooms[roomCode];
             // Check the existing room has space

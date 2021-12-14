@@ -1,4 +1,5 @@
 const Vector = require('./Vector');
+const Constants = require('./Constants');
 
 /** Represents a line - a vector with a position */
 class Line {
@@ -138,6 +139,7 @@ class Line {
 class Polygon {
 
     constructor (points) {
+        if (!Array.isArray(points)) throw new Error ("Constrcutor must receive point array!");
         if (points.length < 3) throw new Error("A polygon must have at least 3 points!");
         this.points = points;
     }
@@ -237,7 +239,7 @@ class Polygon {
             const point = theirPoints[i];
             let numIntersections = 0;
             for (let j = 0; j < sides.length; j++) {
-                if (sideRaycastToPoint(point, sides[j])) numIntersections++;
+                if (Polygon.sideRaycastToPoint(point, sides[j])) numIntersections++;
             }
             if (numIntersections % 2 !== 0) return true;
         }
@@ -249,33 +251,33 @@ class Polygon {
 }
 
 /**
- * Horizontal raycast to point and detect if side intersects
- * Note: colinear or on-edge points are not counted as intersections
- * @param {Array} targetPoint
- * @param {Line} side
- * @returns {Boolean} true if the raycast intersects the side
- */
-const sideRaycastToPoint = (targetPoint, side) => {
-    const [point1, point2] = side.points;
-    // Special case for horizontal lines - just discount
-    if (point1[1] === point2[1]) return false;
-    const raycastY = targetPoint[1];
-    // Assuming the ray is horizontal, if the points lie on the same side of the Y level, there can be no intersection
-    if ((point1[1] > raycastY && point2[1] < raycastY) ||
-        (point1[1] < raycastY && point2[1] > raycastY)) {
-        // Special case for vertical lines - if the points are above and below the Y level, and are to it's left, there is an intersection
-        if (point1[0] === point2[0]){
-            if (point1[0] < targetPoint[0]) return true;
-            else return false;
-        }
-        // Find the side as a linear equation y=mx+c
-        const {m, c} = side.linearEquation();
-        // POI Y = raycastY, feed into equation to get POI X
-        const poiX = (raycastY - c) / m;
-        // Assuming left-to-right raycast, if POI X > the target X, the intersection does not occur before the point
-        if (poiX < targetPoint[0]) return true;
-    }
-    return false;
+* Horizontal raycast to point and detect if side intersects
+* Note: colinear or on-edge points are not counted as intersections
+* @param {Array} targetPoint
+* @param {Line} side
+* @returns {Boolean} true if the raycast intersects the side
+*/
+Polygon.sideRaycastToPoint = (targetPoint, side) => {
+   const [point1, point2] = side.points;
+   // Special case for horizontal lines - just discount
+   if (point1[1] === point2[1]) return false;
+   const raycastY = targetPoint[1];
+   // Assuming the ray is horizontal, if the points lie on the same side of the Y level, there can be no intersection
+   if ((point1[1] > raycastY && point2[1] < raycastY) ||
+       (point1[1] < raycastY && point2[1] > raycastY)) {
+       // Special case for vertical lines - if the points are above and below the Y level, and are to it's left, there is an intersection
+       if (point1[0] === point2[0]){
+           if (point1[0] < targetPoint[0]) return true;
+           else return false;
+       }
+       // Find the side as a linear equation y=mx+c
+       const {m, c} = side.linearEquation();
+       // POI Y = raycastY, feed into equation to get POI X
+       const poiX = (raycastY - c) / m;
+       // Assuming left-to-right raycast, if POI X > the target X, the intersection does not occur before the point
+       if (poiX < targetPoint[0]) return true;
+   }
+   return false;
 };
 
 class Rect {
@@ -349,4 +351,16 @@ class Rect {
 
 }
 
-module.exports = { Polygon, Line };
+/**
+ * Get a bounding box at a position as a Rect
+ * @param {Array} pos
+ * @returns {Rect}
+ */
+Rect.getPieceBoundingRect = pos => {
+    // WARNING maybe pos is incorrectly centered? Check!
+    const hitbox = new Rect(pos, Constants.hitboxSize);
+    const newHit = hitbox.centeredOnSquare();
+    return newHit;
+};
+
+module.exports = { Polygon, Line, Rect };

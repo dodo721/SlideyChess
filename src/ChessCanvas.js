@@ -1,9 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { pointIntersectsRect, rectIntersectsRect } from './server/Collisions';
-import { getPieceType, getPieceColour } from './server/Pieces';
-import { sqSize, sqSizeHalf, sqSizeQuarter } from './server/Constants';
-import { getPiecesInRange } from './server/Rules';
-import { Hitbox, getPieceBoundingHitbox, getPieceHitboxes } from './server/Hitbox';
+import Piece from './server/Pieces';
+import Constants from './server/Constants';
+import Hitbox from './server/Hitbox';
 import Vector from './server/Vector';
 import { Polygon, Rect } from './server/Polygon';
 
@@ -38,8 +36,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         if (playerColour === "w") return pos;
         if (!ctx) return null;
         let newPos = [
-            ctx.canvas.width - pos[0] - sqSize[0],
-            ctx.canvas.height - pos[1] - sqSize[1]
+            ctx.canvas.width - pos[0] - Constants.sqSize[0],
+            ctx.canvas.height - pos[1] - Constants.sqSize[1]
         ];
         return newPos;
     };
@@ -49,7 +47,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         if (!ctx) return null;
         const hitbox = hb.data();
         let invertedPos = displayTransformPos([hitbox[0], hitbox[1]]);
-        let newHitboxPos = [invertedPos[0] - hitbox[2] + sqSize[0], invertedPos[1] - hitbox[3] + sqSize[1]];
+        let newHitboxPos = [invertedPos[0] - hitbox[2] + Constants.sqSize[0], invertedPos[1] - hitbox[3] + Constants.sqSize[1]];
         let newHitbox = [
             newHitboxPos[0], newHitboxPos[1],
             hitbox[2], hitbox[3]
@@ -63,8 +61,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         const newPoly = [];
         polygon.points.forEach(point => {
             const newPoint = displayTransformPos(point);
-            newPoint[0] += sqSize[0];
-            newPoint[1] += sqSize[1];
+            newPoint[0] += Constants.sqSize[0];
+            newPoint[1] += Constants.sqSize[1];
             newPoly.push(newPoint);
         });
         return new Polygon(newPoly);
@@ -155,7 +153,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
     }
 
     const drawChessGrid = () => {
-        const [sqWidth, sqHeight] = sqSize;
+        const [sqWidth, sqHeight] = Constants.sqSize;
         const white = '#F1D9B5';
         const black = '#B58863';
         for (let i = 0; i < 8; i++) {
@@ -167,9 +165,9 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
 
     const drawChessPiece = async (piece, pos) => {
         try {
-            const type = getPieceType(piece);
-            await drawImage(chessPieceImages[type], pos, sqSize);
-            const boundingBox = getPieceBoundingHitbox(pos).boundingBox();
+            const type = Piece.getPieceType(piece);
+            await drawImage(chessPieceImages[type], pos, Constants.sqSize);
+            const boundingBox = Hitbox.getPieceBoundingHitbox(pos).boundingBox();
             if (dragging) {
                 drawRect('#0000ff', boundingBox, 0.3);
             }
@@ -194,7 +192,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
     const onMouseMove = e => {
         if (dragging) {
             const [x,y] = [e.pageX - ctx.canvas.offsetLeft + dragOffset[0], e.pageY - ctx.canvas.offsetTop + dragOffset[1]];
-            const [sqWidth, sqHeight] = sqSize;
+            const [sqWidth, sqHeight] = Constants.sqSize;
             // Deep copy position or react prevents mutation
             let newPos = mousePos.map(x=>x);
             if (x <= ctx.canvas.width - sqWidth && x >= 0) {
@@ -211,9 +209,9 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         const [x,y] = [e.pageX - ctx.canvas.offsetLeft, e.pageY - ctx.canvas.offsetTop];
         const pieces = Object.keys(chessData);
         for (let i = 0; i < pieces.length; i++) {
-            if (getPieceColour(pieces[i]) !== playerColour) continue;
+            if (Piece.getPieceColour(pieces[i]) !== playerColour) continue;
             const pos = displayTransformPos(chessData[pieces[i]]);
-            if (pointIntersectsRect([x,y], [...pos, ...sqSize])) {
+            if (new Rect(pos, Constants.sqSize).containsPoint([x,y])) {
                 const drgOff = [pos[0] - x, pos[1] - y];
                 setDragOffset(drgOff);
                 setMousePos([x + drgOff[0],y + drgOff[1]]);
@@ -228,9 +226,9 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         if (dragPiece) {
             // TODO: diagonal collisions from black perspective
             onPieceMove(dragPiece, displayTransformPos(mousePos));
-            const inRange = getPiecesInRange(dragPiece, displayTransformPos(mousePos), chessData, true);
+            const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
             //const tp = limitHitboxes(dragPiece, displayTransformPos(mousePos), inRange, chessData).hitPieces.filter(piece => getPieceColour(piece)!==playerColour);
-            const hitboxes = getPieceHitboxes(getPieceType(dragPiece), mousePos);
+            const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), mousePos);
             setLastTakeablePieces(inRange);
         }
         setDragPiece(null);
@@ -242,8 +240,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
         drawChessGrid();
         if (chessData) {
             const pieces = Object.keys(chessData);
-            const myPieces = pieces.filter(piece => getPieceColour(piece)===playerColour);
-            const theirPieces = pieces.filter(piece => getPieceColour(piece)!==playerColour);
+            const myPieces = pieces.filter(piece => Piece.getPieceColour(piece)===playerColour);
+            const theirPieces = pieces.filter(piece => Piece.getPieceColour(piece)!==playerColour);
             theirPieces.forEach(piece => {
                 if (!dragging || piece !== dragPiece)
                     drawChessPiece(piece, displayTransformPos(chessData[piece]));
@@ -266,8 +264,9 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
                 drawBoardFromChessData();
                 if (dragging) {
                     drawChessPiece(dragPiece, mousePos);
-                    //const inRange = getPiecesInRange(dragPiece, displayTransformPos(mousePos), chessData, true);
-                    const hitboxes = getPieceHitboxes(getPieceType(dragPiece), displayTransformPos(mousePos));
+                    const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
+                    const {hitboxes, hitPieces} = Hitbox.limitHitboxes(dragPiece, mousePos, inRange, chessData);
+                    //const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), mousePos);
                     hitboxes.forEach((hitbox) => {
                         drawHitbox(hitbox);
                     });
