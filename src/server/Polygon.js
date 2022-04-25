@@ -120,20 +120,20 @@ class Line {
         else return null;
     }
 
-    /**
-     * Initialise a line from a position and dimentions
-     * @param {Number[]} pos 
-     * @param {Number[]} dim 
-     * @returns {Line}
-     */
-    static posDim (pos, dim) {
-        const points = [
-            pos,
-            [pos[0] + dim[0], pos[1] + dim[1]]
-        ];
-        return new Line(points[0], points[1]);
-    }
+}
 
+/**
+* Initialise a line from a position and dimentions
+* @param {Number[]} pos 
+* @param {Number[]} dim 
+* @returns {Line}
+*/
+Line.posDim  = (pos, dim) => {
+   const points = [
+       pos,
+       [pos[0] + dim[0], pos[1] + dim[1]]
+   ];
+   return new Line(points[0], points[1]);
 }
 
 class Polygon {

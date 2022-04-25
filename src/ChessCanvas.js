@@ -142,12 +142,14 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
      * @param {Line} line 
      */
     const drawLine = (line, colour, width, alpha=1) => {
+        const point1 = displayTransformPos(line.points[0]);
+        const point2 = displayTransformPos(line.points[1]);
         ctx.strokeStyle = colour;
         ctx.lineWidth = width;
         ctx.globalAlpha = alpha;
         ctx.beginPath();
-        ctx.moveTo(line.points[0][0], line.points[0][1]);
-        ctx.lineTo(line.points[1][0], line.points[1][1]);
+        ctx.moveTo(point1[0], point1[1]);
+        ctx.lineTo(point2[0], point2[1]);
         ctx.stroke();
         ctx.globalAlpha = 1;
     }
@@ -181,7 +183,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
 
     const drawHitbox = hitbox => {
         const poly = hitbox.polygon();
-        drawPolygon('#00ff00', displayTransformPolygon(poly), 0.3);
+        drawPolygon('#00ff00', poly, 0.3);
     }
 
     const clear = () => {
@@ -265,10 +267,13 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
                 if (dragging) {
                     drawChessPiece(dragPiece, mousePos);
                     const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
-                    const {hitboxes, hitPieces} = Hitbox.limitHitboxes(dragPiece, mousePos, inRange, chessData);
-                    //const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), mousePos);
+                    //const {hitboxes, hitPieces} = Hitbox.limitHitboxes(dragPiece, mousePos, inRange, chessData);
+                    const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), chessData[dragPiece]);
                     hitboxes.forEach((hitbox) => {
                         drawHitbox(hitbox);
+                        const projectedLine = hitbox.projectedLine(mousePos, chessData[dragPiece]);
+                        drawLine(hitbox.line(), '#0000ff', 3);
+                        drawLine(projectedLine, '#ff0000', 3);
                     });
                 }
             }

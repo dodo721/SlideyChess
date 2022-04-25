@@ -2,6 +2,7 @@ const Piece = require('./Pieces');
 const Constants = require('./Constants');
 const { clamp, uniq } = require('./MiscUtil');
 const { Polygon, Line, Rect } = require('./Polygon');
+const Vector = require('./Vector');
 
 class Hitbox {
     
@@ -19,7 +20,8 @@ class Hitbox {
     }
 
     line () {
-        return new Line(this.pos, [this.pos[0] + this.dir[0], this.pos[1] + this.dir[1]]);
+        const offsetPos = [this.pos[0] + Constants.hitboxSize[0] / 2, this.pos[1] + Constants.hitboxSize[1] / 2];
+        return new Line(offsetPos, [offsetPos[0] + this.dir[0], offsetPos[1] + this.dir[1]]);
     }
 
     polygon () {
@@ -106,6 +108,24 @@ class Hitbox {
         return this.polygon().intersects(hitbox.polygon());
     }
 
+    /**
+     * Get the nearest point on the hitbox line to a given point and origin
+     * @param {*} point 
+     * @param {*} origin 
+     */
+    projectedLine (point, origin) {
+        const vector = this.line().vector();
+        const pointVector = new Vector(point[0] - origin[0], point[1] - origin[1]);
+        let projectedVector = pointVector.projectOnto(vector);
+        // Cap maximum projection within line limits
+        if (projectedVector.magnitude() > vector.magnitude()) {
+            projectedVector = projectedVector.normalised().multiply(vector.magnitude());
+        } else if (projectedVector.magnitude() < 0) {
+            projectedVector = new Vector(0,0);
+        }
+        return Line.posDim(origin, projectedVector.dim);
+    }
+
 }
 
 /**
@@ -170,11 +190,11 @@ Hitbox.limitHitboxes = (piece, pos, inRangePieces, chessData) => {
         ///////////////////////////////////////////////////////////////////
         ///                      DIAGONAL LOGIC                         ///
         ///////////////////////////////////////////////////////////////////
-        if (hitbox.isDiagonal()) {
+        /*if (hitbox.isDiagonal()) {
             // TODO: logic for diagonal hitboxes
             inRangePieces.forEach(p => hitPieces.push(p));
             return hitbox;
-        }
+        }*/
         ///////////////////////////////////////////////////////////////////
         ///                       LINEAR LOGIC                          ///
         ///////////////////////////////////////////////////////////////////

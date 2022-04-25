@@ -38,7 +38,7 @@ class Vector {
     multiply (fac) {
         let dim = this.dim;
         dim = dim.map(n => n*fac);
-        return Vector.posDim(dim[0], dim[1]);
+        return new Vector(dim[0], dim[1]);
     }
 
     /**
@@ -49,6 +49,14 @@ class Vector {
         const otherMag = vector.magnitude();
         const projectMag = this.dot(vector) / (otherMag * otherMag);
         return vector.multiply(projectMag);
+    }
+
+    /**
+     * Set the magnitude to 1 without changing direction
+     */
+    normalised () {
+        const mag = this.magnitude();
+        return new Vector(this.dim[0] / mag, this.dim[1] / mag);
     }
 
 }
