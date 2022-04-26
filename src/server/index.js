@@ -85,6 +85,13 @@ io.on('connection', (socket) => {
         else socket.emit("Error", "You cannot move your opponent's pieces!");
     });
 
+    socket.on("PieceTake", piece => {
+        const playerColour = getPlayerColour(me, myRoom);
+        const pieceColour = Piece.getPieceColour(piece)
+        if (playerColour !== pieceColour) myRoom.takePiece(piece);
+        else socket.emit("Error", "You cannot take your own pieces!");
+    });
+
     // Client wants to join a room
     socket.on("RoomConnect", roomCode => {
         console.log("Client requesting room " + roomCode + "...");

@@ -118,14 +118,13 @@ class Hitbox {
 
     /**
      * Get the nearest point on the hitbox line to a given point and origin
-     * TODO: Limiting
      * @param {*} point 
      * @param {*} origin 
      * @returns {Number[]}
      */
     projectedPoint (point, origin) {
         const line = this.line();
-        //const offsetPos = [this.pos[0] + Constants.hitboxSize[0] / 2, this.pos[1] + Constants.hitboxSize[1] / 2];
+        // Undo line offset to reset to piece transform space, so limiting is correct
         line.offset([[-Constants.hitboxSize[0], -Constants.hitboxSize[1]]]);
         const vector = line.vector();
         const pointVector = new Vector(point[0] - origin[0], point[1] - origin[1]);
@@ -146,12 +145,6 @@ class Hitbox {
                 projectedPoint = line.pointsSortedByHeight()[0];
             }
         }
-        /*if (projectedVector.magnitude() > vector.magnitude()) {
-            projectedVector = projectedVector.normalised().multiply(vector.magnitude());
-        } else if (projectedVector.magnitude() < 0) {
-            projectedVector = new Vector(0,0);
-        }*/
-        //return Line.posDim(origin, projectedVector.dim);
         return projectedPoint;
     }
 
@@ -209,6 +202,24 @@ Hitbox.getPiecesInHitbox = (piece, pos, chessData, includeMyPieces) => {
        });
    });
    return uniq(takeablePieces);
+}
+
+Hitbox.getIntersectingPieces = (piece, pos, chessData, includeMyPieces) => {
+    const colour = Piece.getPieceColour(piece);
+    // TODO Error handling
+    const boundingBox = Hitbox.getPieceBoundingHitbox(pos);
+    let intersectingPieces = [];
+    let otherPieces = Object.keys(chessData);
+    // Filter pieces of same colour
+    if (!includeMyPieces) otherPieces = otherPieces.filter(otherPiece => Piece.getPieceColour(otherPiece) !== colour);
+    otherPieces.forEach(otherPiece => {
+        if (otherPiece === piece) return;
+        const otherPieceBoundingBox = Hitbox.getPieceBoundingHitbox(chessData[otherPiece]);
+        if (otherPieceBoundingBox.intersects(boundingBox)) {
+            intersectingPieces.push(otherPiece);
+        }
+    });
+    return uniq(intersectingPieces);
 }
 
 Hitbox.limitHitboxes = (piece, pos, inRangePieces, chessData) => {

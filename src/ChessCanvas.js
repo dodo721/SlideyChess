@@ -23,7 +23,7 @@ const chessPieceImages = {
 
 const imgCache = {};
 
-const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
+const ChessCanvas = ({chessData, playerColour, onPieceMove, onPieceTake, ...props}) => {
 
     const canvasRef = useRef(null);
     const [dragging, setDragging] = useState(false);
@@ -219,6 +219,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
                 setMousePos([x + drgOff[0],y + drgOff[1]]);
                 setDragPiece(pieces[i]);
                 setDragging(true);
+                const inRange = Hitbox.getPiecesInHitbox(pieces[i], displayTransformPos(pos), chessData);
+                setLastTakeablePieces(inRange);
                 break;
             }
         }
@@ -229,13 +231,14 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
             // TODO: diagonal collisions from black perspective
             //onPieceMove(dragPiece, displayTransformPos(mousePos));
             onPieceMove(dragPiece, displayTransformPos(placementPos));
-            const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
-            //const tp = limitHitboxes(dragPiece, displayTransformPos(mousePos), inRange, chessData).hitPieces.filter(piece => getPieceColour(piece)!==playerColour);
-            const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), mousePos);
-            setLastTakeablePieces(inRange);
+            const intersectingPieces = Hitbox.getIntersectingPieces(dragPiece, displayTransformPos(placementPos), chessData);
+            intersectingPieces.forEach(piece => {
+                onPieceTake(piece);
+            });
         }
         setDragPiece(null);
         setDragging(false);
+        setLastTakeablePieces([]);
     };
 
     const drawBoardFromChessData = async () => {
@@ -275,7 +278,6 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
                         drawHitbox(hitbox);
                         const projectedPoint = hitbox.projectedPoint(mousePos, displayTransformPos(chessData[dragPiece]));
                         drawLine(hitbox.line(), '#0000ff', 3);
-                        drawSquare("#ff0000", Piece.getPieceCenter(projectedPoint), [5,5]);
                         const distance = dist(mousePos, projectedPoint);
                         if (distance < closestDist) {
                             closestDist = distance;

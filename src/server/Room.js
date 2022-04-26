@@ -45,6 +45,11 @@ class Room {
         this.updateRoom();
     }
 
+    takePiece (piece) {
+        delete this.chessData[piece];
+        this.updateRoom();
+    }
+
     updateRoom () {
         const client1 = clients[this.playerWhite];
         const client2 = clients[this.playerBlack];

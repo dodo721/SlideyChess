@@ -73,6 +73,13 @@ const App = () => {
         socket.emit("PieceMove", piece, pos);
     };
 
+    const onPieceTake = piece => {
+        let newChessData = Object.assign({}, chessData);
+        delete newChessData[piece];
+        setChessData(newChessData);
+        socket.emit("PieceTake", piece);
+    };
+
     let numPlayers = 0;
     if (roomData) {
         if (roomData.playerWhite && roomData.playerBlack)
@@ -97,7 +104,7 @@ const App = () => {
             <div className="game-panel">
                 {roomData ? <div className="d-flex flex-column justify-content-center align-items-center">
                     <h5>You are player {playerColourToString(playerColour)}</h5>
-                    <Chessboard chessData={chessData} playerColour={playerColour} onPieceMove={onPieceMove} />
+                    <Chessboard chessData={chessData} playerColour={playerColour} onPieceMove={onPieceMove} onPieceTake={onPieceTake} />
                     <br/>
                     <div className="d-flex flex-row justify-content-end w-100">
                         <div className="btn btn-secondary" onClick={exitRoom}>Exit</div>
