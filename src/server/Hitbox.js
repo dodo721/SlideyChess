@@ -125,6 +125,8 @@ class Hitbox {
      */
     projectedPoint (point, origin) {
         const line = this.line();
+        //const offsetPos = [this.pos[0] + Constants.hitboxSize[0] / 2, this.pos[1] + Constants.hitboxSize[1] / 2];
+        line.offset([[-Constants.hitboxSize[0], -Constants.hitboxSize[1]]]);
         const vector = line.vector();
         const pointVector = new Vector(point[0] - origin[0], point[1] - origin[1]);
         let projectedVector = pointVector.projectOnto(vector);

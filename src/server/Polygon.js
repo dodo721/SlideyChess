@@ -33,6 +33,15 @@ class Line {
         return !this.isVertical() && !this.isHorizontal();
     }
 
+    offset (offset) {
+        this.points[0] = [this.points[0][0] + offset[0][0], this.points[0][1] + offset[0][1]];
+        if (offset.length > 1) {
+            this.points[1] = [this.points[1][0] + offset[1][0], this.points[1][1] + offset[1][1]];
+        } else {
+            this.points[1] = [this.points[1][0] + offset[0][0], this.points[1][1] + offset[0][1]];
+        }
+    }
+
     /**
      * Sorts points [low, high]
      * @returns {Number[]}
