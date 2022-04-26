@@ -24,7 +24,7 @@ const uniq = array => {
 const dist = (pos1, pos2) => {
     const distX = pos2[0] - pos1[0];
     const distY = pos2[1] - pos1[1];
-    const dist = Math.sqrt((distX * distX) + (distY + distY));
+    const dist = Math.sqrt((distX * distX) + (distY * distY));
     return dist;
 }
 

@@ -33,12 +33,20 @@ class Line {
         return !this.isVertical() && !this.isHorizontal();
     }
 
+    /**
+     * Sorts points [low, high]
+     * @returns {Number[]}
+     */
     pointsSortedByHeight () {
         const lowPoint = this.points[0][1] < this.points[1][1] ? this.points[0] : this.points[1];
         const highPoint = this.points[0][1] < this.points[1][1] ? this.points[1] : this.points[0];
         return [lowPoint,highPoint];
     }
 
+    /**
+     * Sorts points [low, high]
+     * @returns {Number[]}
+     */
     pointsSortedByLength () {
         const lowPoint = this.points[0][0] < this.points[1][0] ? this.points[0] : this.points[1];
         const highPoint = this.points[0][0] < this.points[1][0] ? this.points[1] : this.points[0];

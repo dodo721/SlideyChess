@@ -4,6 +4,7 @@ import Constants from './server/Constants';
 import Hitbox from './server/Hitbox';
 import Vector from './server/Vector';
 import { Polygon, Rect } from './server/Polygon';
+import { dist } from './server/MiscUtil';
 
 const chessPieceImages = {
     "Kb": "/images/king_black.png",
@@ -28,6 +29,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
     const [dragging, setDragging] = useState(false);
     const [dragPiece, setDragPiece] = useState(null);
     const [mousePos, setMousePos] = useState([0,0]);
+    const [placementPos, setPlacementPos] = useState([0,0]);
     const [dragOffset, setDragOffset] = useState([0,0]);
     const [ctx, setCtx] = useState(null);
     const [lastTakeablePieces, setLastTakeablePieces] = useState([]);
@@ -103,9 +105,7 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
             return drawPromise;
         } else {
             doImgDraw(img, [x,y], size);
-            return new Promise ((resolve, reject) => {
-                resolve();
-            });
+            return new Promise ((resolve, reject) => resolve());
         }
     };
     
@@ -142,8 +142,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
      * @param {Line} line 
      */
     const drawLine = (line, colour, width, alpha=1) => {
-        const point1 = displayTransformPos(line.points[0]);
-        const point2 = displayTransformPos(line.points[1]);
+        const point1 = line.points[0];
+        const point2 = line.points[1];
         ctx.strokeStyle = colour;
         ctx.lineWidth = width;
         ctx.globalAlpha = alpha;
@@ -227,7 +227,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
     const onMouseUp = () => {
         if (dragPiece) {
             // TODO: diagonal collisions from black perspective
-            onPieceMove(dragPiece, displayTransformPos(mousePos));
+            //onPieceMove(dragPiece, displayTransformPos(mousePos));
+            onPieceMove(dragPiece, displayTransformPos(placementPos));
             const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
             //const tp = limitHitboxes(dragPiece, displayTransformPos(mousePos), inRange, chessData).hitPieces.filter(piece => getPieceColour(piece)!==playerColour);
             const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), mousePos);
@@ -265,16 +266,30 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
             } else {
                 drawBoardFromChessData();
                 if (dragging) {
-                    drawChessPiece(dragPiece, mousePos);
-                    const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
+                    //const inRange = Hitbox.getPiecesInHitbox(dragPiece, displayTransformPos(mousePos), chessData, true);
                     //const {hitboxes, hitPieces} = Hitbox.limitHitboxes(dragPiece, mousePos, inRange, chessData);
-                    const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), chessData[dragPiece]);
+                    const hitboxes = Hitbox.getPieceHitboxes(Piece.getPieceType(dragPiece), displayTransformPos(chessData[dragPiece]));
+                    let closestProjectedPoint = null;
+                    let closestDist = Infinity;
                     hitboxes.forEach((hitbox) => {
                         drawHitbox(hitbox);
-                        const projectedLine = hitbox.projectedLine(mousePos, chessData[dragPiece]);
+                        const projectedPoint = hitbox.projectedPoint(mousePos, displayTransformPos(chessData[dragPiece]));
                         drawLine(hitbox.line(), '#0000ff', 3);
-                        drawLine(projectedLine, '#ff0000', 3);
+                        drawSquare("#ff0000", Piece.getPieceCenter(projectedPoint), [5,5]);
+                        const distance = dist(mousePos, projectedPoint);
+                        if (distance < closestDist) {
+                            closestDist = distance;
+                            closestProjectedPoint = projectedPoint;
+                        } else {
+                            console.log("We gotta investigate this");
+                        }
                     });
+                    if (!closestProjectedPoint && hitboxes.length > 0) {
+                        console.log("Null space??", closestProjectedPoint, closestDist);
+                    }
+                    setPlacementPos(closestProjectedPoint || mousePos);
+                    drawChessPiece(dragPiece, placementPos);
+                    drawSquare("#ff00ff", placementPos, [5,5]);
                 }
             }
         }

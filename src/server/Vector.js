@@ -61,4 +61,8 @@ class Vector {
 
 }
 
+Vector.pointDiff = (point1, point2) => {
+    return new Vector(point1[0] - point2[0], point1[1] - point2[1]);
+}
+
 module.exports = Vector;

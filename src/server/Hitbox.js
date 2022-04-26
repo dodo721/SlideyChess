@@ -18,7 +18,7 @@ class Hitbox {
     data () {
         return [...this.pos, ...this.dir];
     }
-
+    
     line () {
         const offsetPos = [this.pos[0] + Constants.hitboxSize[0] / 2, this.pos[1] + Constants.hitboxSize[1] / 2];
         return new Line(offsetPos, [offsetPos[0] + this.dir[0], offsetPos[1] + this.dir[1]]);
@@ -110,20 +110,35 @@ class Hitbox {
 
     /**
      * Get the nearest point on the hitbox line to a given point and origin
+     * TODO: Limiting
      * @param {*} point 
      * @param {*} origin 
+     * @returns {Number[]}
      */
-    projectedLine (point, origin) {
-        const vector = this.line().vector();
+    projectedPoint (point, origin) {
+        const line = this.line();
+        const vector = line.vector();
         const pointVector = new Vector(point[0] - origin[0], point[1] - origin[1]);
         let projectedVector = pointVector.projectOnto(vector);
+        let projectedPoint = [origin[0] + projectedVector.dim[0], origin[1] + projectedVector.dim[1]];
         // Cap maximum projection within line limits
-        if (projectedVector.magnitude() > vector.magnitude()) {
+        const projectedLine = Line.posDim(origin, projectedVector.dim);
+        if (projectedLine.pointsSortedByHeight()[1][1] > line.pointsSortedByHeight()[1][1]) {
+            projectedPoint = line.pointsSortedByHeight()[1];
+        } else if (projectedLine.pointsSortedByHeight()[0][1] < line.pointsSortedByHeight()[0][1]) {
+            projectedPoint = line.pointsSortedByHeight()[0];
+        } else if (projectedLine.pointsSortedByLength()[1][0] > line.pointsSortedByLength()[1][0]) {
+            projectedPoint = line.pointsSortedByLength()[1];
+        } else if (projectedLine.pointsSortedByLength()[0][0] < line.pointsSortedByLength()[0][0]) {
+            projectedPoint = line.pointsSortedByLength()[0];
+        }
+        /*if (projectedVector.magnitude() > vector.magnitude()) {
             projectedVector = projectedVector.normalised().multiply(vector.magnitude());
         } else if (projectedVector.magnitude() < 0) {
             projectedVector = new Vector(0,0);
-        }
-        return Line.posDim(origin, projectedVector.dim);
+        }*/
+        //return Line.posDim(origin, projectedVector.dim);
+        return projectedPoint;
     }
 
 }
@@ -338,9 +353,9 @@ const PIECE_HITBOXES = {
     ],
     "Nw": [
         new Hitbox([-1, 2], [2, -4]),
-        new Hitbox([1, 2], [-2, -4]),
-        new Hitbox([-2, 1], [4, -2]),
-        new Hitbox([2, 1], [-4, -2]),
+        //new Hitbox([1, 2], [-2, -4]),
+        //new Hitbox([-2, 1], [4, -2]),
+        //new Hitbox([2, 1], [-4, -2]),
     ],
     "Nb": [
         new Hitbox([-1, 2], [2, -4]),
