@@ -280,13 +280,8 @@ const ChessCanvas = ({chessData, playerColour, onPieceMove, ...props}) => {
                         if (distance < closestDist) {
                             closestDist = distance;
                             closestProjectedPoint = projectedPoint;
-                        } else {
-                            console.log("We gotta investigate this");
                         }
                     });
-                    if (!closestProjectedPoint && hitboxes.length > 0) {
-                        console.log("Null space??", closestProjectedPoint, closestDist);
-                    }
                     setPlacementPos(closestProjectedPoint || mousePos);
                     drawChessPiece(dragPiece, placementPos);
                     drawSquare("#ff00ff", placementPos, [5,5]);
