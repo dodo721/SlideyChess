@@ -18,6 +18,14 @@ class Hitbox {
     data () {
         return [...this.pos, ...this.dir];
     }
+
+    isHorizontal () {
+        return this.dir[1] === 0;
+    }
+
+    isVertical () {
+        return this.dir[0] === 0;
+    }
     
     line () {
         const offsetPos = [this.pos[0] + Constants.hitboxSize[0] / 2, this.pos[1] + Constants.hitboxSize[1] / 2];
@@ -123,14 +131,18 @@ class Hitbox {
         let projectedPoint = [origin[0] + projectedVector.dim[0], origin[1] + projectedVector.dim[1]];
         // Cap maximum projection within line limits
         const projectedLine = Line.posDim(origin, projectedVector.dim);
-        if (projectedLine.pointsSortedByHeight()[1][1] > line.pointsSortedByHeight()[1][1]) {
-            projectedPoint = line.pointsSortedByHeight()[1];
-        } else if (projectedLine.pointsSortedByHeight()[0][1] < line.pointsSortedByHeight()[0][1]) {
-            projectedPoint = line.pointsSortedByHeight()[0];
-        } else if (projectedLine.pointsSortedByLength()[1][0] > line.pointsSortedByLength()[1][0]) {
-            projectedPoint = line.pointsSortedByLength()[1];
-        } else if (projectedLine.pointsSortedByLength()[0][0] < line.pointsSortedByLength()[0][0]) {
-            projectedPoint = line.pointsSortedByLength()[0];
+        if (line.isHorizontal()) {
+            if (projectedLine.pointsSortedByLength()[1][0] > line.pointsSortedByLength()[1][0]) {
+                projectedPoint = line.pointsSortedByLength()[1];
+            } else if (projectedLine.pointsSortedByLength()[0][0] < line.pointsSortedByLength()[0][0]) {
+                projectedPoint = line.pointsSortedByLength()[0];
+            }
+        } else {
+            if (projectedLine.pointsSortedByHeight()[1][1] > line.pointsSortedByHeight()[1][1]) {
+                projectedPoint = line.pointsSortedByHeight()[1];
+            } else if (projectedLine.pointsSortedByHeight()[0][1] < line.pointsSortedByHeight()[0][1]) {
+                projectedPoint = line.pointsSortedByHeight()[0];
+            }
         }
         /*if (projectedVector.magnitude() > vector.magnitude()) {
             projectedVector = projectedVector.normalised().multiply(vector.magnitude());
